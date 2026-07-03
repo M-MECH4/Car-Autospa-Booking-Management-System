@@ -1,0 +1,255 @@
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f5f7;
+        }
+
+        .page-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 38px;
+            background: #f4f5f7;
+            min-width: 0;
+        }
+
+        .vehicle-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .vehicle-top h1 {
+            margin: 0;
+            font-size: 34px;
+            font-weight: 900;
+            color: #26364a;
+        }
+
+        .vehicle-top p {
+            margin-top: 8px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .vehicle-count {
+            background: white;
+            padding: 13px 18px;
+            border-radius: 12px;
+            color: #26364a;
+            font-weight: 900;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+        }
+
+        .message {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-weight: 800;
+        }
+
+        .error {
+            background: #ffe8e8;
+            color: #b42318;
+        }
+
+        .vehicle-table-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 18px 20px;
+            font-size: 14px;
+            font-weight: 900;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 18px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .plate-badge {
+            display: inline-block;
+            background: #26364a;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .customer-name {
+            font-weight: 900;
+            color: #26364a;
+        }
+
+        .customer-email {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .vehicle-empty {
+            text-align: center;
+            padding: 45px;
+            color: #64748b;
+            font-weight: 800;
+        }
+
+        .vehicle-action-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-btn {
+            border: none;
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vehicle-view {
+            background: #2563eb;
+            color: white;
+        }
+
+        .vehicle-view:hover {
+            background: #1d4ed8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 580px;
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #26364a;
+            font-weight: 900;
+        }
+
+        .close-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: #e5e7eb;
+            color: #111827;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            margin: 18px 0 10px;
+            font-size: 15px;
+            font-weight: 900;
+            color: #13a6bd;
+            text-transform: uppercase;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 13px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .detail-row span {
+            color: #64748b;
+            font-weight: 800;
+        }
+
+        .detail-row strong {
+            color: #111827;
+            font-weight: 900;
+            text-align: right;
+        }
+
+        @media (max-width: 900px) {
+            .page-layout {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 24px;
+            }
+
+            .vehicle-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 14px;
+            }
+
+            .vehicle-table-card {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 950px;
+            }
+        }

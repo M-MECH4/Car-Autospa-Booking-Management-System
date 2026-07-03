@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+
+<style>
+    #toast {
+        display: none;
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #22c55e;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 9999;
+        transition: opacity 0.5s;
+    }
+</style>
+</head>
+<body>
+            <div id="updateProgressSection" class="update-box">
+                <h4><i class="fa-solid fa-arrows-rotate"></i> Update Service Progress</h4>
+                <select id="staffProgressSelect" class="progress-select">
+                    <option value="Booked">Booked</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+                <p style="font-size: 11px; color: #64748b; margin-top: 8px;">
+                    <i class="fa-solid fa-bell"></i> Customer will be notified when you update the progress
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal" onclick="closeModal('bookingModal')">Close</button>
+                <button id="updateSubmitBtn" class="btn-modal btn-submit" onclick="saveUpdate()">Update
+                    Progress</button>
+            </div>
+            <button onclick="closeModal('bookingModal')"
+                style="position: absolute; top: 20px; right: 20px; border: none; background: none; cursor: pointer; font-size: 20px; color: #94a3b8;">&times;</button>
+   <div id="toast">Action Successful!</div>
+   
+   <script>
+    function saveUpdate() {
+        showToast("Progress updated successfully!");
+        closeModal("bookingModal");
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById("toast");
+        toast.textContent = msg;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => toast.style.display = "none", 500);
+        }, 3000);
+    }
+</script>
+</body>
+</html>
