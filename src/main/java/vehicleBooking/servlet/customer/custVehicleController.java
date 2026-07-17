@@ -211,7 +211,18 @@ public class custVehicleController extends HttpServlet {
             return;
         }
 
-        int row = VehicleDAO.deleteVehicle(vehicleplatenum.trim().toUpperCase(), custID);
+        vehicleplatenum = vehicleplatenum.trim().toUpperCase();
+
+        if (VehicleDAO.hasBookingConstraint(vehicleplatenum)) {
+            session.setAttribute(
+                    "errorMessage",
+                    "This vehicle cannot be deleted because it is linked to an existing booking."
+            );
+            response.sendRedirect(request.getContextPath() + "/custVehicleController?action=list");
+            return;
+        }
+
+        int row = VehicleDAO.deleteVehicle(vehicleplatenum, custID);
 
         if (row > 0) {
             session.setAttribute("successMessage", "Vehicle deleted successfully.");

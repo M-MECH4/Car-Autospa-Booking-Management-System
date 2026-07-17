@@ -51,8 +51,15 @@
 
     ArrayList<BookingBean> bookingList = new ArrayList<BookingBean>();
 
+    String filter = request.getParameter("filter");
+    String filterLabel = "mine".equalsIgnoreCase(filter) ? "Managed by Me" : "All Bookings";
+
     try {
-        bookingList = BookingDAO.getAllBookingsForStaff();
+        if ("mine".equalsIgnoreCase(filter)) {
+            bookingList = BookingDAO.getBookingsByStaff(staffID);
+        } else {
+            bookingList = BookingDAO.getAllBookingsForStaff();
+        }
     } catch (Exception e) {
         e.printStackTrace();
         errorMessage = "Error: " + e.getMessage();
@@ -75,7 +82,9 @@
 
     <!-- sidebar css LETAK LAST supaya dia override sidebar lama -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css?v=<%= System.currentTimeMillis() %>">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -94,7 +103,7 @@
             </div>
 
             <div class="booking-count">
-                Total Bookings: <%= bookingList.size() %>
+                <%= filterLabel %>: <%= bookingList.size() %>
             </div>
         </div>
 
@@ -105,6 +114,31 @@
         <% if (errorMessage != null && !errorMessage.trim().isEmpty()) { %>
             <div class="message error"><%= safe(errorMessage) %></div>
         <% } %>
+
+        <form method="get"
+              action="<%= request.getContextPath() %>/staff_owner/booking/staffBooking.jsp"
+              style="margin-bottom:20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+
+            <select name="filter"
+                    style="padding:10px 14px; border-radius:20px; border:1px solid #cbd5e1; font-weight:700;">
+
+                <option value="all"
+                    <%= !"mine".equalsIgnoreCase(request.getParameter("filter")) ? "selected" : "" %>>
+                    All Bookings
+                </option>
+
+                <option value="mine"
+                    <%= "mine".equalsIgnoreCase(request.getParameter("filter")) ? "selected" : "" %>>
+                    Managed by Me
+                </option>
+
+            </select>
+
+            <button type="submit" class="btn btn-view">
+                Filter
+            </button>
+
+        </form>
 
         <div class="table-card">
 
@@ -226,7 +260,6 @@
                                         data-time="<%= time %>"
                                         data-status="<%= status %>"
                                         data-notif="<%= notifText %>">
-                                    <i class="fa-solid fa-eye"></i>
                                     View
                                 </button>
 
@@ -236,7 +269,6 @@
                                             class="btn btn-update"
                                             style="background:#9ca3af !important; color:#ffffff !important; cursor:not-allowed !important; opacity:0.75 !important; box-shadow:none !important;"
                                             disabled>
-                                        <i class="fa-solid fa-pen"></i>
                                         Progress
                                     </button>
 
@@ -244,7 +276,6 @@
                                             class="btn btn-send"
                                             style="background:#9ca3af !important; color:#ffffff !important; cursor:not-allowed !important; opacity:0.75 !important; box-shadow:none !important;"
                                             disabled>
-                                        <i class="fa-solid fa-bell"></i>
                                         Send
                                     </button>
 
@@ -253,14 +284,12 @@
                                     <button type="button"
                                             class="btn btn-update"
                                             onclick="openUpdateModal('<%= bookingID %>', '<%= status %>')">
-                                        <i class="fa-solid fa-pen"></i>
                                         Progress
                                     </button>
 
                                     <button type="button"
                                             class="btn btn-send"
                                             onclick="openNotificationModal('<%= bookingID %>', '<%= custName %>')">
-                                        <i class="fa-solid fa-bell"></i>
                                         Send
                                     </button>
 

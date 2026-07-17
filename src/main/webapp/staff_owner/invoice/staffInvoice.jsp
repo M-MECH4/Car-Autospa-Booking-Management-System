@@ -1,12 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="vehicleBooking.bean.InvoiceBean" %>
 <%@ page import="vehicleBooking.dao.StaffInvoiceDAO" %>
 
 <%!
     public String safe(String value) {
-        if (value == null) {
+        if (value == null || value.trim().isEmpty() || "null".equalsIgnoreCase(value)) {
             return "-";
         }
         return value;
@@ -43,13 +44,17 @@
         staffUsername = isOwner ? "Owner" : "Staff";
     }
 
-    String roleLabel = isOwner ? "Owner" : "Staff";
+    String generatedParam = request.getParameter("generated");
+    boolean generated = "true".equalsIgnoreCase(generatedParam)
+            || "yes".equalsIgnoreCase(generatedParam)
+            || "Y".equalsIgnoreCase(generatedParam);
 
-    String dashboardLink = isOwner
-            ? request.getContextPath() + "/owner/ownerDashboard.jsp"
-            : request.getContextPath() + "/staff_owner/staffDashboard.jsp";
+    List<InvoiceBean> invoiceList = new ArrayList<InvoiceBean>();
 
-    List<InvoiceBean> invoiceList = StaffInvoiceDAO.getCompletedInvoicesForStaff();
+    if (generated) {
+        invoiceList = StaffInvoiceDAO.getCompletedInvoicesForStaff();
+    }
+
     DecimalFormat moneyFormat = new DecimalFormat("0.00");
 %>
 
@@ -63,12 +68,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <!-- page css dulu -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staffInvoice.css?v=<%= System.currentTimeMillis() %>">
-
-    <!-- sidebar css LETAK LAST supaya dia override sidebar lama -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css?v=<%= System.currentTimeMillis() %>">
-   
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
+
+    <style>
+        .invoice-generate-form {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .btn-generate-all {
+            min-width: 175px;
+            height: 44px;
+        }
+
+        .empty-row i {
+            font-size: 34px;
+            color: #0F4C5C;
+        }
+
+        @media(max-width: 900px) {
+            .invoice-generate-form {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .btn-generate-all {
+                width: 100%;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -76,7 +108,7 @@
 <div class="xp-layout">
 
     <jsp:include page="/sidebar.jsp" />
-    
+
     <main class="xp-main-content">
 
         <div class="page-header">
@@ -85,8 +117,20 @@
                     <i class="fa-solid fa-file-invoice" style="color:#074858; margin-right:10px;"></i>
                     Staff Invoices
                 </h1>
-                <p>Staff can generate and print invoices for completed bookings.</p>
+                <p>Click Generate Invoices to display all invoices for completed bookings.</p>
             </div>
+
+            <form action="${pageContext.request.contextPath}/staff_owner/invoice/staffInvoice.jsp"
+                  method="get"
+                  class="invoice-generate-form">
+                <button type="submit"
+                        name="generated"
+                        value="true"
+                        class="btn-invoice btn-view btn-generate-all">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    Generate Invoices
+                </button>
+            </form>
         </div>
 
         <div class="invoice-table-card">
@@ -98,7 +142,6 @@
                         <th>Customer</th>
                         <th>Vehicle</th>
                         <th>Package</th>
-                        <th>Status</th>
                         <th>Amount</th>
                         <th>Actions</th>
                     </tr>
@@ -106,10 +149,20 @@
 
                 <tbody>
                 <%
-                    if (invoiceList == null || invoiceList.size() == 0) {
+                    if (!generated) {
                 %>
                     <tr>
-                        <td colspan="8" class="empty-row">
+                        <td colspan="7" class="empty-row">
+                            <i class="fa-solid fa-file-circle-plus"></i><br><br>
+                            No invoice generated yet.<br>
+                            Click Generate Invoices to show all invoices.
+                        </td>
+                    </tr>
+                <%
+                    } else if (invoiceList == null || invoiceList.size() == 0) {
+                %>
+                    <tr>
+                        <td colspan="7" class="empty-row">
                             No invoice found. Invoice can be generated after booking status is COMPLETED.
                         </td>
                     </tr>
@@ -145,40 +198,13 @@
                         <td><%= safe(inv.getPackageName()) %></td>
 
                         <td>
-                            <span class="paid-badge">
-                                <i class="fa-solid fa-check"></i>
-                                COMPLETED
-                            </span>
-                        </td>
-
-                        <td>
                             <span class="amount-cell"><%= amountText %></span>
                         </td>
 
                         <td>
                             <div class="invoice-actions">
-
-                                <button type="button"
-                                        class="btn-invoice btn-view"
-                                        data-invoice-no="<%= esc(inv.getInvoiceNo()) %>"
-                                        data-invoice-date="<%= esc(inv.getInvoiceDate()) %>"
-                                        data-booking-id="<%= esc(inv.getBookingID()) %>"
-                                        data-booking-date="<%= esc(inv.getBookingDate()) %>"
-                                        data-customer-name="<%= esc(inv.getCustomerName()) %>"
-                                        data-customer-phone="<%= esc(inv.getCustomerPhone()) %>"
-                                        data-vehicle="<%= esc(vehicleText) %>"
-                                        data-package-name="<%= esc(inv.getPackageName()) %>"
-                                        data-package-desc="<%= esc(inv.getPackageDesc()) %>"
-                                        data-amount="<%= esc(amountText) %>"
-                                        onclick="generateInvoice(this)">
-                                    <i class="fa-solid fa-file-circle-plus"></i>
-                                    Generate
-                                </button>
-
                                 <button type="button"
                                         class="btn-invoice btn-print"
-                                        disabled
-                                        data-generated="N"
                                         data-invoice-no="<%= esc(inv.getInvoiceNo()) %>"
                                         data-invoice-date="<%= esc(inv.getInvoiceDate()) %>"
                                         data-booking-id="<%= esc(inv.getBookingID()) %>"
@@ -193,7 +219,6 @@
                                     <i class="fa-solid fa-print"></i>
                                     Print
                                 </button>
-
                             </div>
                         </td>
                     </tr>
@@ -249,11 +274,6 @@
             <div>
                 <div class="field-label">Vehicle</div>
                 <div class="field-value" id="printVehicle">-</div>
-            </div>
-
-            <div>
-                <div class="field-label">Service Status</div>
-                <div class="field-value">COMPLETED</div>
             </div>
         </div>
     </div>
@@ -331,24 +351,7 @@
         document.getElementById("printTotal").innerText = safeValue(button.dataset.amount);
     }
 
-    function generateInvoice(button) {
-        var actionBox = button.closest(".invoice-actions");
-        var printButton = actionBox.querySelector(".btn-print");
-
-        printButton.disabled = false;
-        printButton.dataset.generated = "Y";
-        printButton.classList.add("print-enabled");
-
-        button.innerHTML = '<i class="fa-solid fa-check"></i> Generated';
-        button.disabled = true;
-    }
-
     function printInvoice(button) {
-        if (button.dataset.generated !== "Y") {
-            alert("Please generate the invoice first before printing.");
-            return;
-        }
-
         fillInvoicePrint(button);
 
         setTimeout(function () {

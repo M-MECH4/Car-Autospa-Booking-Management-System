@@ -126,7 +126,9 @@
 
     <!-- sidebar css LETAK LAST supaya dia override sidebar lama -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css?v=<%= System.currentTimeMillis() %>">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -140,6 +142,7 @@
         <div class="topbar">
             <div>
                 <h1><%= reportTitle %></h1>
+                <p>Review booking performance and service records for the selected period.</p>
             </div>
 
             <div class="topbar-right">
@@ -172,21 +175,14 @@
                         Generate Report
                     </button>
 
-                    <% if (generated) { %>
-                        <button type="button" class="report-btn print-btn" onclick="window.print()">
-                            <i class="fa-solid fa-print"></i>
-                            Print
-                        </button>
-                    <% } %>
+
                 </form>
 
-                <div class="user-circle">
-                    <%= displayName.substring(0, 1).toUpperCase() %>
-                </div>
+ 
             </div>
         </div>
 
-        <div class="content-area">
+        <div>
 
             <% if (!generated) { %>
 

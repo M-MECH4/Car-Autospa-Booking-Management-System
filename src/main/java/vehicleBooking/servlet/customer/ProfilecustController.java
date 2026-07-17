@@ -14,78 +14,131 @@ import vehicleBooking.dao.CustDAO;
 
 @WebServlet("/ProfilecustController")
 public class ProfilecustController extends HttpServlet {
-	private static final long serialVersionUID = 1L;
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+    private static final long serialVersionUID = 1L;
 
-		response.sendRedirect(request.getContextPath() + "/customer/customerProfile.jsp");
-	}
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+        response.sendRedirect(request.getContextPath() + "/customer/customerProfile.jsp");
+    }
 
-		try {
-			HttpSession session = request.getSession(false);
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-			if (session == null || session.getAttribute("custID") == null) {
-				response.sendRedirect(request.getContextPath() + "/login.jsp");
-				return;
-			}
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
-			String custID = request.getParameter("custID");
-			String custName = request.getParameter("custName");
-			String custUsername = request.getParameter("custUsername");
-			String custEmail = request.getParameter("custEmail");
-			String custPhoneNum = request.getParameter("custPhoneNum");
+        try {
+            HttpSession session = request.getSession(false);
 
-			if (custID == null || custName == null || custUsername == null || custEmail == null || custPhoneNum == null
-					|| custID.trim().isEmpty()
-					|| custName.trim().isEmpty()
-					|| custUsername.trim().isEmpty()
-					|| custEmail.trim().isEmpty()
-					|| custPhoneNum.trim().isEmpty()) {
+            if (session == null || session.getAttribute("custID") == null) {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+                return;
+            }
 
-				request.setAttribute("errorMessage", "Please fill in all required fields.");
-				request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
-				return;
-			}
+            String role = (String) session.getAttribute("role");
 
-			CustomerBean customer = new CustomerBean();
+            if (role == null || !"customer".equalsIgnoreCase(role)) {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+                return;
+            }
 
-			customer.setCustID(custID);
-			customer.setCustName(custName);
-			customer.setCustUsername(custUsername);
-			customer.setCustEmail(custEmail);
-			customer.setCustPhoneNum(custPhoneNum);
+            String custID = (String) session.getAttribute("custID");
 
-			int row = CustDAO.updateCustomerProfile(customer);
+            String custName = request.getParameter("custName");
+            String custPhoneNum = request.getParameter("custPhoneNum");
+            String custEmail = request.getParameter("custEmail");
+            String custUsername = request.getParameter("custUsername");
 
-			if (row > 0) {
+            if (isEmpty(custID)
+                    || isEmpty(custName)
+                    || isEmpty(custPhoneNum)
+                    || isEmpty(custEmail)
+                    || isEmpty(custUsername)) {
 
-				session.setAttribute("custName", custName);
-				session.setAttribute("custUsername", custUsername);
-				session.setAttribute("custEmail", custEmail);
-				session.setAttribute("custPhoneNum", custPhoneNum);
+                request.setAttribute("errorMessage", "Please fill in all required fields.");
+                request.setAttribute("editMode", "true");
+                request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+                return;
+            }
 
-				session.setAttribute("name", custName);
-				session.setAttribute("email", custEmail);
+            custName = custName.trim();
+            custPhoneNum = custPhoneNum.trim();
+            custEmail = custEmail.trim();
+            custUsername = custUsername.trim();
 
-				request.setAttribute("successMessage", "Profile updated successfully.");
-				request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
-				return;
+            if (!isNumericPhone(custPhoneNum)) {
+                request.setAttribute("errorMessage", "Phone number must contain numbers only.");
+                request.setAttribute("editMode", "true");
+                request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+                return;
+            }
 
-			} else {
-				request.setAttribute("errorMessage", "Profile was not updated. Please try again.");
-				request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
-				return;
-			}
+            if (CustDAO.emailExistsForOtherCustomer(custEmail, custID)) {
+                request.setAttribute("errorMessage", "This email is already used by another customer.");
+                request.setAttribute("editMode", "true");
+                request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+                return;
+            }
 
-		} catch (Exception e) {
-			e.printStackTrace();
+            CustomerBean customer = new CustomerBean();
 
-			request.setAttribute("errorMessage", "Error: " + e.getMessage());
-			request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
-		}
-	}
+            customer.setCustID(custID);
+            customer.setCustName(custName);
+            customer.setCustPhoneNum(custPhoneNum);
+            customer.setCustEmail(custEmail);
+            customer.setCustUsername(custUsername);
+
+            int row = CustDAO.updateCustomerProfile(customer);
+
+            if (row > 0) {
+
+                CustomerBean updatedCustomer = CustDAO.getCustomerById(custID);
+
+                if (updatedCustomer != null) {
+                    session.setAttribute("custName", updatedCustomer.getCustName());
+                    session.setAttribute("custPhoneNum", updatedCustomer.getCustPhoneNum());
+                    session.setAttribute("custEmail", updatedCustomer.getCustEmail());
+                    session.setAttribute("custUsername", updatedCustomer.getCustUsername());
+                    session.setAttribute("custRace", updatedCustomer.getCustRace());
+                    session.setAttribute("custReligion", updatedCustomer.getCustReligion());
+
+                    session.setAttribute("name", updatedCustomer.getCustName());
+                    session.setAttribute("email", updatedCustomer.getCustEmail());
+                } else {
+                    session.setAttribute("custName", custName);
+                    session.setAttribute("custPhoneNum", custPhoneNum);
+                    session.setAttribute("custEmail", custEmail);
+                    session.setAttribute("custUsername", custUsername);
+
+                    session.setAttribute("name", custName);
+                    session.setAttribute("email", custEmail);
+                }
+
+                request.setAttribute("successMessage", "Profile updated successfully.");
+                request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+                return;
+            }
+
+            request.setAttribute("errorMessage", "Profile was not updated. Please try again.");
+            request.setAttribute("editMode", "true");
+            request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            request.setAttribute("errorMessage", "Error: " + e.getMessage());
+            request.setAttribute("editMode", "true");
+            request.getRequestDispatcher("/customer/customerProfile.jsp").forward(request, response);
+        }
+    }
+
+    private boolean isNumericPhone(String phone) {
+        return phone != null && phone.matches("[0-9]+");
+    }
+
+    private boolean isEmpty(String value) {
+        return value == null || value.trim().isEmpty();
+    }
 }

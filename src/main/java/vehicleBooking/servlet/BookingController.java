@@ -10,17 +10,23 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 
 import vehicleBooking.bean.BookingBean;
+import vehicleBooking.bean.PackageBean;
 import vehicleBooking.dao.BookingDAO;
+import vehicleBooking.dao.PackageDAO;
 
 @WebServlet("/BookingController")
 public class BookingController extends HttpServlet {
+
     private static final long serialVersionUID = 1L;
 
     private static final String CUSTOMER_BOOKING_LIST = "/customer/booking/listBooking.jsp";
     private static final String CUSTOMER_BOOKING_FORM = "/customer/booking/custBooking.jsp";
     private static final String STAFF_BOOKING_PAGE = "/staff_owner/booking/staffBooking.jsp";
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Kuala_Lumpur");
 
     public BookingController() {
         super();
@@ -65,7 +71,7 @@ public class BookingController extends HttpServlet {
             if ("updateProgress".equalsIgnoreCase(action)
                     || "updateServiceProgress".equalsIgnoreCase(action)) {
 
-                if (!isStaff(session)) {
+                if (!isStaffOrOwner(session)) {
                     response.sendRedirect(request.getContextPath() + "/login.jsp");
                     return;
                 }
@@ -78,7 +84,7 @@ public class BookingController extends HttpServlet {
                     || "send".equalsIgnoreCase(action)
                     || "notify".equalsIgnoreCase(action)) {
 
-                if (!isStaff(session)) {
+                if (!isStaffOrOwner(session)) {
                     response.sendRedirect(request.getContextPath() + "/login.jsp");
                     return;
                 }
@@ -113,7 +119,7 @@ public class BookingController extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
 
-            if (isStaff(session)) {
+            if (isStaffOrOwner(session)) {
                 session.setAttribute("errorMessage", "Error: " + e.getMessage());
                 response.sendRedirect(request.getContextPath() + STAFF_BOOKING_PAGE);
             } else {
@@ -231,6 +237,12 @@ public class BookingController extends HttpServlet {
         packageID = packageID.trim();
         vehiclePlateNum = vehiclePlateNum.trim().toUpperCase();
 
+        if (!isValidBookingDate(bookingDate)) {
+            session.setAttribute("errorMessage", "Please select a valid booking date.");
+            response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_FORM);
+            return;
+        }
+
         if (!isValidBookingTime(bookingTime)) {
             session.setAttribute("errorMessage", "Please select a valid booking time.");
             response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_FORM);
@@ -255,8 +267,15 @@ public class BookingController extends HttpServlet {
             return;
         }
 
+        // Customer can only submit package IDs available for their race/religion.
+        if (!isCustomerAllowedPackage(custID, packageID)) {
+            session.setAttribute("errorMessage", "This package is not available for your account.");
+            response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_FORM);
+            return;
+        }
+
         if (!BookingDAO.isDateAvailableForCreate(bookingDate)) {
-            session.setAttribute("errorMessage", "This date is already booked. Please choose another date.");
+            session.setAttribute("errorMessage", "This date is fully booked. Please choose another date.");
             response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_FORM);
             return;
         }
@@ -313,6 +332,12 @@ public class BookingController extends HttpServlet {
         packageID = packageID.trim();
         vehiclePlateNum = vehiclePlateNum.trim().toUpperCase();
 
+        if (!isValidBookingDate(bookingDate)) {
+            session.setAttribute("errorMessage", "Please select a valid booking date.");
+            response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_LIST);
+            return;
+        }
+
         if (!isValidBookingTime(bookingTime)) {
             session.setAttribute("errorMessage", "Please select a valid booking time.");
             response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_LIST);
@@ -337,8 +362,15 @@ public class BookingController extends HttpServlet {
             return;
         }
 
+        // Customer cannot manually update booking to a restricted festive package.
+        if (!isCustomerAllowedPackage(custID, packageID)) {
+            session.setAttribute("errorMessage", "This package is not available for your account.");
+            response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_LIST);
+            return;
+        }
+
         if (!BookingDAO.isDateAvailableForUpdate(bookingDate, bookingID)) {
-            session.setAttribute("errorMessage", "This date is already booked. Please choose another date.");
+            session.setAttribute("errorMessage", "This date is fully booked. Please choose another date.");
             response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_LIST);
             return;
         }
@@ -396,7 +428,34 @@ public class BookingController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + CUSTOMER_BOOKING_LIST);
     }
 
-    private boolean isStaff(HttpSession session) {
+    // =========================
+    // CHECK CUSTOMER PACKAGE ELIGIBILITY
+    // =========================
+    private boolean isCustomerAllowedPackage(String custID, String packageID) {
+
+        if (isEmpty(custID) || isEmpty(packageID)) {
+            return false;
+        }
+
+        ArrayList<PackageBean> packageList = PackageDAO.getCustomerPackage(custID);
+
+        if (packageList == null || packageList.isEmpty()) {
+            return false;
+        }
+
+        for (PackageBean p : packageList) {
+            if (p != null
+                    && p.getPackageID() != null
+                    && p.getPackageID().equalsIgnoreCase(packageID)) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isStaffOrOwner(HttpSession session) {
         if (session == null) {
             return false;
         }
@@ -404,11 +463,21 @@ public class BookingController extends HttpServlet {
         String role = (String) session.getAttribute("role");
 
         return session.getAttribute("staffID") != null
-                || "staff".equalsIgnoreCase(role);
+                || "staff".equalsIgnoreCase(role)
+                || "owner".equalsIgnoreCase(role);
     }
 
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isValidBookingDate(String bookingDate) {
+        try {
+            LocalDate.parse(bookingDate);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isSunday(String bookingDate) {
@@ -418,7 +487,8 @@ public class BookingController extends HttpServlet {
 
     private boolean isPastDate(String bookingDate) {
         LocalDate selectedDate = LocalDate.parse(bookingDate);
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(APP_ZONE);
+
         return selectedDate.isBefore(today);
     }
 

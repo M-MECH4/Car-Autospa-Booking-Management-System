@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import vehicleBooking.ConnectionManager;
 import vehicleBooking.bean.BookingBean;
@@ -12,7 +14,7 @@ import vehicleBooking.bean.PackageBean;
 
 public class BookingDAO {
 
-    private static final int MAX_BOOKING_PER_DAY = 1;
+    private static final int MAX_BOOKING_PER_DAY = 19;
 
     // =========================
     // CUSTOMER: CREATE BOOKING
@@ -34,7 +36,7 @@ public class BookingDAO {
                 "INSERT INTO BOOKING " +
                 "(BOOKINGID, VEHICLEPLATENUM, PACKAGEID, BOOKINGDATE, BOOKINGTIME, BOOKINGSTATUS, NOTIFICATIONSENT) " +
                 "VALUES " +
-                "(?, ?, ?, TO_DATE(?, 'YYYY-MM-DD'), TO_TIMESTAMP(? || ' ' || ?, 'YYYY-MM-DD HH24:MI'), 'BOOKED', 'N')";
+                "(?, ?, ?, TO_DATE(?, 'YYYY-MM-DD'), TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI'), 'BOOKED', 'N')";
 
         try {
             con = ConnectionManager.getConnection();
@@ -66,8 +68,7 @@ public class BookingDAO {
             ps.setString(2, booking.getVehiclePlateNum());
             ps.setString(3, booking.getPackageID());
             ps.setString(4, booking.getBookingDate());
-            ps.setString(5, booking.getBookingDate());
-            ps.setString(6, booking.getBookingTime());
+            ps.setString(5, toBookingDateTime(booking.getBookingDate(), booking.getBookingTime()));
 
             System.out.println("========== CREATE BOOKING DEBUG ==========");
             System.out.println("NEW BOOKINGID = " + newBookingID);
@@ -191,7 +192,7 @@ public class BookingDAO {
         String sql =
                 "UPDATE BOOKING b " +
                 "SET b.BOOKINGDATE = TO_DATE(?, 'YYYY-MM-DD'), " +
-                "b.BOOKINGTIME = TO_TIMESTAMP(? || ' ' || ?, 'YYYY-MM-DD HH24:MI'), " +
+                "b.BOOKINGTIME = TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI'), " +
                 "b.PACKAGEID = ?, " +
                 "b.VEHICLEPLATENUM = ? " +
                 "WHERE b.BOOKINGID = ? " +
@@ -217,14 +218,13 @@ public class BookingDAO {
             ps = con.prepareStatement(sql);
 
             ps.setString(1, booking.getBookingDate());
-            ps.setString(2, booking.getBookingDate());
-            ps.setString(3, booking.getBookingTime());
-            ps.setString(4, booking.getPackageID());
-            ps.setString(5, booking.getVehiclePlateNum());
-            ps.setString(6, booking.getBookingID());
-            ps.setString(7, custID);
-            ps.setString(8, booking.getVehiclePlateNum());
-            ps.setString(9, custID);
+            ps.setString(2, toBookingDateTime(booking.getBookingDate(), booking.getBookingTime()));
+            ps.setString(3, booking.getPackageID());
+            ps.setString(4, booking.getVehiclePlateNum());
+            ps.setString(5, booking.getBookingID());
+            ps.setString(6, custID);
+            ps.setString(7, booking.getVehiclePlateNum());
+            ps.setString(8, custID);
 
             int row = ps.executeUpdate();
 
@@ -481,6 +481,62 @@ public class BookingDAO {
         }
     }
 
+
+    // =========================
+    // CUSTOMER: GET BOOKED TIME MAP FOR TIME BUTTONS
+    // Returns date -> comma-separated booked times for active booking slots.
+    // =========================
+    public static Map<String, ArrayList<String>> getBookedTimeMap() throws SQLException {
+
+        Map<String, ArrayList<String>> bookedTimeMap = new LinkedHashMap<String, ArrayList<String>>();
+
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        String sql =
+                "SELECT TO_CHAR(TRUNC(BOOKINGDATE), 'YYYY-MM-DD') AS BOOKINGDATEONLY, " +
+                "TO_CHAR(BOOKINGTIME, 'HH24:MI') AS BOOKINGTIMEONLY " +
+                "FROM BOOKING " +
+                "WHERE UPPER(BOOKINGSTATUS) IN ('BOOKED', 'IN PROGRESS') " +
+                "ORDER BY BOOKINGDATE, BOOKINGTIME";
+
+        try {
+            con = ConnectionManager.getConnection();
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String date = rs.getString("BOOKINGDATEONLY");
+                String time = rs.getString("BOOKINGTIMEONLY");
+
+                ArrayList<String> timeList = bookedTimeMap.get(date);
+
+                if (timeList == null) {
+                    timeList = new ArrayList<String>();
+                    bookedTimeMap.put(date, timeList);
+                }
+
+                timeList.add(time);
+            }
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+
+            if (ps != null) {
+                ps.close();
+            }
+
+            if (con != null) {
+                con.close();
+            }
+        }
+
+        return bookedTimeMap;
+    }
+
     // =========================
     // CHECK DATE TIME AVAILABLE FOR CREATE
     // Important: no status filter because BOOKINGTIME has unique constraint.
@@ -494,14 +550,13 @@ public class BookingDAO {
         String sql =
                 "SELECT COUNT(*) AS TOTAL_BOOKING " +
                 "FROM BOOKING " +
-                "WHERE BOOKINGTIME = TO_TIMESTAMP(? || ' ' || ?, 'YYYY-MM-DD HH24:MI')";
+                "WHERE BOOKINGTIME = TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI')";
 
         try {
             con = ConnectionManager.getConnection();
 
             ps = con.prepareStatement(sql);
-            ps.setString(1, bookingDate);
-            ps.setString(2, bookingTime);
+            ps.setString(1, toBookingDateTime(bookingDate, bookingTime));
 
             rs = ps.executeQuery();
 
@@ -540,16 +595,15 @@ public class BookingDAO {
         String sql =
                 "SELECT COUNT(*) AS TOTAL_BOOKING " +
                 "FROM BOOKING " +
-                "WHERE BOOKINGTIME = TO_TIMESTAMP(? || ' ' || ?, 'YYYY-MM-DD HH24:MI') " +
+                "WHERE BOOKINGTIME = TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI') " +
                 "AND BOOKINGID <> ?";
 
         try {
             con = ConnectionManager.getConnection();
 
             ps = con.prepareStatement(sql);
-            ps.setString(1, bookingDate);
-            ps.setString(2, bookingTime);
-            ps.setString(3, bookingID);
+            ps.setString(1, toBookingDateTime(bookingDate, bookingTime));
+            ps.setString(2, bookingID);
 
             rs = ps.executeQuery();
 
@@ -655,6 +709,95 @@ public class BookingDAO {
             con = ConnectionManager.getConnection();
 
             ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                BookingBean booking = new BookingBean();
+
+                booking.setBookingID(rs.getString("BOOKINGID"));
+                booking.setBookingDate(rs.getString("BOOKINGDATE"));
+                booking.setBookingTime(rs.getString("BOOKINGTIMEONLY"));
+                booking.setBookingStatus(rs.getString("BOOKINGSTATUS"));
+
+                booking.setPackageID(rs.getString("PACKAGEID"));
+                booking.setPackageName(rs.getString("PACKAGENAME"));
+                booking.setPackagePrice(rs.getDouble("PACKAGEPRICE"));
+
+                booking.setVehiclePlateNum(rs.getString("VEHICLEPLATENUM"));
+                booking.setVehicleBrand(rs.getString("VEHICLEBRAND"));
+                booking.setVehicleModel(rs.getString("VEHICLEMODEL"));
+                booking.setVehicleYear(rs.getInt("VEHICLEYEAR"));
+
+                booking.setCustID(rs.getString("CUSTID"));
+                booking.setCustName(rs.getString("CUSTNAME"));
+                booking.setCustUsername(rs.getString("CUSTUSERNAME"));
+                booking.setCustEmail(rs.getString("CUSTEMAIL"));
+                booking.setCustPhoneNum(rs.getString("CUSTPHONENUM"));
+
+                booking.setNotificationSent(rs.getString("NOTIFICATIONSENT"));
+
+                bookingList.add(booking);
+            }
+
+            return bookingList;
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+
+            if (ps != null) {
+                ps.close();
+            }
+
+            if (con != null) {
+                con.close();
+            }
+        }
+    }
+
+    // =========================
+    // STAFF: FILTER BOOKINGS BY STAFF
+    // =========================
+    public static ArrayList<BookingBean> getBookingsByStaff(String staffID) throws SQLException {
+
+        ArrayList<BookingBean> bookingList = new ArrayList<BookingBean>();
+
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        String sql =
+                "SELECT b.BOOKINGID, " +
+                "TO_CHAR(b.BOOKINGDATE, 'YYYY-MM-DD') AS BOOKINGDATE, " +
+                "TO_CHAR(b.BOOKINGTIME, 'HH24:MI') AS BOOKINGTIMEONLY, " +
+                "b.BOOKINGSTATUS, " +
+                "b.PACKAGEID, " +
+                "NVL(b.NOTIFICATIONSENT, 'N') AS NOTIFICATIONSENT, " +
+                "p.PACKAGENAME, " +
+                "p.PACKAGEPRICE, " +
+                "v.VEHICLEPLATENUM, " +
+                "v.VEHICLEBRAND, " +
+                "v.VEHICLEMODEL, " +
+                "v.VEHICLEYEAR, " +
+                "c.CUSTID, " +
+                "c.CUSTNAME, " +
+                "c.CUSTUSERNAME, " +
+                "c.CUSTEMAIL, " +
+                "c.CUSTPHONENUM " +
+                "FROM BOOKING b " +
+                "INNER JOIN VEHICLE v ON b.VEHICLEPLATENUM = v.VEHICLEPLATENUM " +
+                "INNER JOIN CUSTOMER c ON v.CUSTID = c.CUSTID " +
+                "INNER JOIN PACKAGE p ON b.PACKAGEID = p.PACKAGEID " +
+                "WHERE b.STAFFID = ? " +
+                "ORDER BY b.BOOKINGDATE DESC, b.BOOKINGTIME DESC";
+
+        try {
+            con = ConnectionManager.getConnection();
+
+            ps = con.prepareStatement(sql);
+            ps.setString(1, staffID);
+
             rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -811,6 +954,10 @@ public class BookingDAO {
                 con.close();
             }
         }
+    }
+
+    private static String toBookingDateTime(String bookingDate, String bookingTime) {
+        return bookingDate + " " + bookingTime;
     }
 
     private static String normalizeStatus(String status) {

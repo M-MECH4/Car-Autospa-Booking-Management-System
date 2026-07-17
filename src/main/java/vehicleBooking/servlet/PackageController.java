@@ -25,210 +25,712 @@ public class PackageController extends HttpServlet {
         super();
     }
 
+    /*
+     * Validates the package price.
+     *
+     * Negative package prices are rejected on the server side.
+     * Zero is allowed, but values below zero are not allowed.
+     */
+    private static double parsePackagePrice(
+            String packagePriceValue) {
+
+        if (packagePriceValue == null
+                || packagePriceValue.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Package price is required."
+            );
+        }
+
+        final double packagePrice;
+
+        try {
+            packagePrice =
+                    Double.parseDouble(
+                            packagePriceValue.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "Package price must be a valid number.",
+                    e
+            );
+        }
+
+        if (Double.isNaN(packagePrice)
+                || Double.isInfinite(packagePrice)) {
+
+            throw new IllegalArgumentException(
+                    "Package price must be a valid number."
+            );
+        }
+
+        if (packagePrice < 0) {
+
+            throw new IllegalArgumentException(
+                    "Package price cannot be negative."
+            );
+        }
+
+        return packagePrice;
+    }
+
+    /*
+     * Validates the festive discount rate.
+     */
+    private static double parseDiscountRate(
+            String discountRateValue) {
+
+        if (discountRateValue == null
+                || discountRateValue.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Discount rate is required and must be between 0 and 100."
+            );
+        }
+
+        final double discountRate;
+
+        try {
+            discountRate =
+                    Double.parseDouble(
+                            discountRateValue.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "Discount rate must be a valid number between 0 and 100.",
+                    e
+            );
+        }
+
+        if (Double.isNaN(discountRate)
+                || Double.isInfinite(discountRate)
+                || discountRate < 0
+                || discountRate > 100) {
+
+            throw new IllegalArgumentException(
+                    "Discount rate must be between 0 and 100."
+            );
+        }
+
+        return discountRate;
+    }
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doGet(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
+        HttpSession session =
+                request.getSession(false);
 
-        if (session == null || session.getAttribute("role") == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+        if (session == null
+                || session.getAttribute("role") == null) {
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/login.jsp"
+            );
+
             return;
         }
 
-        String role = (String) session.getAttribute("role");
-        String action = request.getParameter("action");
+        String role =
+                (String) session.getAttribute("role");
 
-        boolean isStaff = "staff".equalsIgnoreCase(role) || "owner".equalsIgnoreCase(role);
+        String action =
+                request.getParameter("action");
+
+        boolean isStaffOrOwner =
+                "staff".equalsIgnoreCase(role)
+                || "owner".equalsIgnoreCase(role);
 
         try {
 
+            /*
+             * Delete package.
+             *
+             * If the package has no booking constraint,
+             * it is permanently deleted.
+             *
+             * If the package is already used by a booking,
+             * it is changed to UNAVAILABLE.
+             */
             if ("delete".equalsIgnoreCase(action)) {
 
-                if (!isStaff) {
-                    response.sendRedirect(request.getContextPath() + "/PackageController");
+                if (!isStaffOrOwner) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/PackageController"
+                    );
+
                     return;
                 }
 
-                String packageID = request.getParameter("packageID");
+                String packageID =
+                        request.getParameter(
+                                "packageID"
+                        );
 
-                if (packageID != null && !packageID.trim().isEmpty()) {
-                    PackageDAO.deletePackage(packageID);
-                    session.setAttribute("packageSuccess", "Package deleted successfully.");
+                if (packageID != null
+                        && !packageID.trim().isEmpty()) {
+
+                    packageID =
+                            packageID.trim();
+
+                    boolean permanentlyDeleted =
+                            PackageDAO
+                                    .deletePackageWithConstraintCheck(
+                                            packageID
+                                    );
+
+                    if (permanentlyDeleted) {
+
+                        session.setAttribute(
+                                "packageSuccess",
+                                "Package had no booking constraint "
+                                + "and was permanently deleted."
+                        );
+
+                    } else {
+
+                        session.setAttribute(
+                                "packageSuccess",
+                                "Package is used by an existing "
+                                + "booking, so it has been set "
+                                + "to unavailable."
+                        );
+                    }
+
                 } else {
-                    session.setAttribute("packageError", "Invalid package ID.");
-                }
 
-                response.sendRedirect(request.getContextPath() + "/PackageController");
-                return;
-            }
-
-            if ("restore".equalsIgnoreCase(action)) {
-
-                if (!isStaff) {
-                    response.sendRedirect(request.getContextPath() + "/PackageController");
-                    return;
-                }
-
-                String packageID = request.getParameter("packageID");
-
-                if (packageID != null && !packageID.trim().isEmpty()) {
-                    PackageDAO.restorePackage(packageID);
-                    session.setAttribute("packageSuccess", "Package restored successfully.");
-                } else {
-                    session.setAttribute("packageError", "Invalid package ID.");
-                }
-
-                response.sendRedirect(request.getContextPath() + "/PackageController");
-                return;
-            }
-
-            if ("hardDelete".equalsIgnoreCase(action)) {
-
-                if (!isStaff) {
-                    response.sendRedirect(request.getContextPath() + "/PackageController");
-                    return;
-                }
-
-                String packageID = request.getParameter("packageID");
-
-                if (packageID == null || packageID.trim().isEmpty()) {
-                    session.setAttribute("packageError", "Invalid package ID.");
-                    response.sendRedirect(request.getContextPath() + "/PackageController");
-                    return;
-                }
-
-                if (PackageDAO.hasBooking(packageID)) {
                     session.setAttribute(
                             "packageError",
-                            "This package cannot be permanently deleted because customers already made a booking using this package."
+                            "Invalid package ID."
                     );
-                } else {
-                    PackageDAO.hardDeletePackage(packageID);
-                    session.setAttribute("packageSuccess", "Package permanently deleted successfully.");
                 }
 
-                response.sendRedirect(request.getContextPath() + "/PackageController");
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/PackageController"
+                );
+
                 return;
             }
 
-            if ("edit".equalsIgnoreCase(action)) {
+            /*
+             * Restore an unavailable package.
+             */
+            if ("restore".equalsIgnoreCase(action)) {
 
-                if (!isStaff) {
-                    response.sendRedirect(request.getContextPath() + "/PackageController");
+                if (!isStaffOrOwner) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/PackageController"
+                    );
+
                     return;
                 }
 
-                String packageID = request.getParameter("packageID");
+                String packageID =
+                        request.getParameter(
+                                "packageID"
+                        );
 
-                if (packageID != null && !packageID.trim().isEmpty()) {
-                    PackageBean packageBean = PackageDAO.getPackageById(packageID);
-                    request.setAttribute("packageBean", packageBean);
+                if (packageID != null
+                        && !packageID.trim().isEmpty()) {
+
+                    PackageDAO.restorePackage(
+                            packageID.trim()
+                    );
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Package restored successfully."
+                    );
+
+                } else {
+
+                    session.setAttribute(
+                            "packageError",
+                            "Invalid package ID."
+                    );
+                }
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/PackageController"
+                );
+
+                return;
+            }
+
+            /*
+             * Permanently delete a package when possible.
+             */
+            if ("hardDelete".equalsIgnoreCase(action)) {
+
+                if (!isStaffOrOwner) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/PackageController"
+                    );
+
+                    return;
+                }
+
+                String packageID =
+                        request.getParameter(
+                                "packageID"
+                        );
+
+                if (packageID == null
+                        || packageID.trim().isEmpty()) {
+
+                    session.setAttribute(
+                            "packageError",
+                            "Invalid package ID."
+                    );
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/PackageController"
+                    );
+
+                    return;
+                }
+
+                boolean permanentlyDeleted =
+                        PackageDAO
+                                .deletePackageWithConstraintCheck(
+                                        packageID.trim()
+                                );
+
+                if (permanentlyDeleted) {
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Package had no booking constraint "
+                            + "and was permanently deleted."
+                    );
+
+                } else {
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Package is used by an existing "
+                            + "booking, so it has been set "
+                            + "to unavailable."
+                    );
+                }
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/PackageController"
+                );
+
+                return;
+            }
+
+            /*
+             * Retrieve a package for editing.
+             */
+            if ("edit".equalsIgnoreCase(action)) {
+
+                if (!isStaffOrOwner) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/PackageController"
+                    );
+
+                    return;
+                }
+
+                String packageID =
+                        request.getParameter(
+                                "packageID"
+                        );
+
+                if (packageID != null
+                        && !packageID.trim().isEmpty()) {
+
+                    PackageBean packageBean =
+                            PackageDAO.getPackageById(
+                                    packageID.trim()
+                            );
+
+                    request.setAttribute(
+                            "packageBean",
+                            packageBean
+                    );
                 }
             }
 
+            /*
+             * Retrieve the package list.
+             */
             ArrayList<PackageBean> packageList;
 
-            if (isStaff) {
-                packageList = PackageDAO.getAllPackage();
+            if (isStaffOrOwner) {
+
+                packageList =
+                        PackageDAO.getAllPackage();
+
             } else {
-                packageList = PackageDAO.getCustomerPackage();
+
+                String custID =
+                        (String) session.getAttribute(
+                                "custID"
+                        );
+
+                if (custID != null
+                        && !custID.trim().isEmpty()) {
+
+                    packageList =
+                            PackageDAO
+                                    .getCustomerPackage(
+                                            custID
+                                    );
+
+                } else {
+
+                    packageList =
+                            PackageDAO
+                                    .getCustomerPackage();
+                }
             }
 
-            request.setAttribute("packageList", packageList);
+            request.setAttribute(
+                    "packageList",
+                    packageList
+            );
 
-            RequestDispatcher rd;
+            RequestDispatcher dispatcher;
 
-            if (isStaff) {
-                rd = request.getRequestDispatcher("/staff_owner/package/managePackage.jsp");
+            if (isStaffOrOwner) {
+
+                dispatcher =
+                        request.getRequestDispatcher(
+                                "/staff_owner/package/managePackage.jsp"
+                        );
+
             } else {
-                rd = request.getRequestDispatcher("/customer/package/viewPackage.jsp");
+
+                dispatcher =
+                        request.getRequestDispatcher(
+                                "/customer/package/viewPackage.jsp"
+                        );
             }
 
-            rd.forward(request, response);
+            dispatcher.forward(
+                    request,
+                    response
+            );
 
         } catch (Exception e) {
+
             e.printStackTrace();
-            session.setAttribute("packageError", "Error: " + e.getMessage());
-            response.sendRedirect(request.getContextPath() + "/PackageController");
+
+            session.setAttribute(
+                    "packageError",
+                    "Error: " + e.getMessage()
+            );
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/PackageController"
+            );
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
+        request.setCharacterEncoding(
+                "UTF-8"
+        );
 
-        if (session == null || session.getAttribute("role") == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+        response.setCharacterEncoding(
+                "UTF-8"
+        );
+
+        HttpSession session =
+                request.getSession(false);
+
+        if (session == null
+                || session.getAttribute("role") == null) {
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/login.jsp"
+            );
+
             return;
         }
 
-        String role = (String) session.getAttribute("role");
+        String role =
+                (String) session.getAttribute(
+                        "role"
+                );
 
-        if (!"staff".equalsIgnoreCase(role) && !"owner".equalsIgnoreCase(role)) {
-            response.sendRedirect(request.getContextPath() + "/PackageController");
+        if (!"staff".equalsIgnoreCase(role)
+                && !"owner".equalsIgnoreCase(role)) {
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/PackageController"
+            );
+
             return;
         }
 
         try {
-            String action = request.getParameter("action");
-            String type = request.getParameter("type");
 
+            String action =
+                    request.getParameter(
+                            "action"
+                    );
+
+            String type =
+                    request.getParameter(
+                            "type"
+                    );
+
+            /*
+             * Routine package.
+             */
             if ("routine".equalsIgnoreCase(type)) {
 
-                RoutineBean p = new RoutineBean();
+                RoutineBean packageBean =
+                        new RoutineBean();
 
-                p.setPackageID(request.getParameter("packageID"));
-                p.setPackageName(request.getParameter("packageName"));
-                p.setPackagePrice(Double.parseDouble(request.getParameter("packagePrice")));
-                p.setPackageDesc(request.getParameter("packageDesc"));
-                p.setServiceName(request.getParameter("serviceName"));
-                p.setEntryMethod(request.getParameter("entryMethod"));
-                p.setPackageStatus("AVAILABLE");
+                packageBean.setPackageID(
+                        request.getParameter(
+                                "packageID"
+                        )
+                );
+
+                packageBean.setPackageName(
+                        request.getParameter(
+                                "packageName"
+                        )
+                );
+
+                /*
+                 * Negative price validation is performed here.
+                 */
+                packageBean.setPackagePrice(
+                        parsePackagePrice(
+                                request.getParameter(
+                                        "packagePrice"
+                                )
+                        )
+                );
+
+                packageBean.setPackageDesc(
+                        request.getParameter(
+                                "packageDesc"
+                        )
+                );
+
+                packageBean.setServiceName(
+                        request.getParameter(
+                                "serviceName"
+                        )
+                );
+
+                packageBean.setEntryMethod(
+                        request.getParameter(
+                                "entryMethod"
+                        )
+                );
+
+                packageBean.setPackageStatus(
+                        "AVAILABLE"
+                );
 
                 if ("update".equalsIgnoreCase(action)) {
-                    PackageDAO.updateRoutine(p);
-                    session.setAttribute("packageSuccess", "Routine package updated successfully.");
+
+                    PackageDAO.updateRoutine(
+                            packageBean
+                    );
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Routine package updated successfully."
+                    );
+
                 } else {
-                    PackageDAO.addRoutine(p);
-                    session.setAttribute("packageSuccess", "Routine package added successfully.");
+
+                    PackageDAO.addRoutine(
+                            packageBean
+                    );
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Routine package added successfully."
+                    );
                 }
 
+            /*
+             * Festive package.
+             */
             } else if ("festive".equalsIgnoreCase(type)) {
 
-                FestivalBean p = new FestivalBean();
+                FestivalBean packageBean =
+                        new FestivalBean();
 
-                p.setPackageID(request.getParameter("packageID"));
-                p.setPackageName(request.getParameter("packageName"));
-                p.setPackagePrice(Double.parseDouble(request.getParameter("packagePrice")));
-                p.setPackageDesc(request.getParameter("packageDesc"));
-                p.setServiceName(request.getParameter("serviceName"));
-                p.setFestivalName(request.getParameter("festivalName"));
-                p.setStartDate(request.getParameter("startDate"));
-                p.setEndDate(request.getParameter("endDate"));
-                p.setDiscountRate(Double.parseDouble(request.getParameter("discountRate")));
-                p.setPackageStatus("AVAILABLE");
+                packageBean.setPackageID(
+                        request.getParameter(
+                                "packageID"
+                        )
+                );
+
+                packageBean.setPackageName(
+                        request.getParameter(
+                                "packageName"
+                        )
+                );
+
+                /*
+                 * Negative price validation is performed here.
+                 */
+                packageBean.setPackagePrice(
+                        parsePackagePrice(
+                                request.getParameter(
+                                        "packagePrice"
+                                )
+                        )
+                );
+
+                packageBean.setPackageDesc(
+                        request.getParameter(
+                                "packageDesc"
+                        )
+                );
+
+                packageBean.setServiceName(
+                        request.getParameter(
+                                "serviceName"
+                        )
+                );
+
+                packageBean.setFestivalName(
+                        request.getParameter(
+                                "festivalName"
+                        )
+                );
+
+                packageBean.setStartDate(
+                        request.getParameter(
+                                "startDate"
+                        )
+                );
+
+                packageBean.setEndDate(
+                        request.getParameter(
+                                "endDate"
+                        )
+                );
+
+                packageBean.setDiscountRate(
+                        parseDiscountRate(
+                                request.getParameter(
+                                        "discountRate"
+                                )
+                        )
+                );
+
+                packageBean.setTargetRace(
+                        request.getParameter(
+                                "targetRace"
+                        )
+                );
+
+                packageBean.setTargetReligion(
+                        request.getParameter(
+                                "targetReligion"
+                        )
+                );
+
+                packageBean.setPackageStatus(
+                        "AVAILABLE"
+                );
 
                 if ("update".equalsIgnoreCase(action)) {
-                    PackageDAO.updateFestive(p);
-                    session.setAttribute("packageSuccess", "Festive package updated successfully.");
+
+                    PackageDAO.updateFestive(
+                            packageBean
+                    );
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Festive package updated successfully."
+                    );
+
                 } else {
-                    PackageDAO.addFestive(p);
-                    session.setAttribute("packageSuccess", "Festive package added successfully.");
+
+                    PackageDAO.addFestive(
+                            packageBean
+                    );
+
+                    session.setAttribute(
+                            "packageSuccess",
+                            "Festive package added successfully."
+                    );
                 }
 
             } else {
-                session.setAttribute("packageError", "Invalid package type.");
+
+                session.setAttribute(
+                        "packageError",
+                        "Invalid package type."
+                );
             }
 
-            response.sendRedirect(request.getContextPath() + "/PackageController");
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/PackageController"
+            );
+
+        } catch (IllegalArgumentException e) {
+
+            e.printStackTrace();
+
+            session.setAttribute(
+                    "packageError",
+                    e.getMessage()
+            );
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/PackageController"
+            );
 
         } catch (Exception e) {
+
             e.printStackTrace();
-            session.setAttribute("packageError", "Error: " + e.getMessage());
-            response.sendRedirect(request.getContextPath() + "/PackageController");
+
+            session.setAttribute(
+                    "packageError",
+                    "Error: " + e.getMessage()
+            );
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/PackageController"
+            );
         }
     }
 }

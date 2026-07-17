@@ -182,6 +182,38 @@ public class ReportDAO {
         return list;
     }
 
+
+    public static int getTotalReports() {
+        int totalReports = 0;
+
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        String sql =
+                "SELECT COUNT(*) AS TOTALREPORTS " +
+                "FROM BOOKING";
+
+        try {
+            con = ConnectionManager.getConnection();
+
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                totalReports = rs.getInt("TOTALREPORTS");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            close(rs, ps, con);
+        }
+
+        return totalReports;
+    }
+
     private static void close(ResultSet rs, PreparedStatement ps, Connection con) {
         try {
             if (rs != null) rs.close();

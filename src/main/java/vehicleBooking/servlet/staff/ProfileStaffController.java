@@ -33,24 +33,32 @@ public class ProfileStaffController extends HttpServlet {
         String staffUsername = request.getParameter("staffUsername");
         String staffPhoneNum = request.getParameter("staffPhoneNum");
 
+        if (staffPhoneNum == null || !staffPhoneNum.trim().matches("[0-9]+")) {
+            redirectToProfile(request, response, role, "invalidPhone");
+            return;
+        }
+
+        staffPhoneNum = staffPhoneNum.trim();
+
         boolean updated = StaffDAO.updateStaffProfile(staffID, staffUsername, staffPhoneNum);
 
         if (updated) {
             session.setAttribute("staffUsername", staffUsername);
             session.setAttribute("staffPhoneNum", staffPhoneNum);
 
-            if ("owner".equalsIgnoreCase(role)) {
-                response.sendRedirect(request.getContextPath() + "/staff_owner/profile/ownerProfile.jsp?msg=success");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/staff_owner/profile/staffProfile.jsp?msg=success");
-            }
-
+            redirectToProfile(request, response, role, "success");
         } else {
-            if ("owner".equalsIgnoreCase(role)) {
-                response.sendRedirect(request.getContextPath() + "/staff_owner/profile/ownerProfile.jsp?msg=failed");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/staff_owner/profile/staffProfile.jsp?msg=failed");
-            }
+            redirectToProfile(request, response, role, "failed");
         }
+    }
+
+    private void redirectToProfile(HttpServletRequest request, HttpServletResponse response,
+            String role, String message) throws IOException {
+
+        String page = "owner".equalsIgnoreCase(role)
+                ? "/staff_owner/profile/ownerProfile.jsp"
+                : "/staff_owner/profile/staffProfile.jsp";
+
+        response.sendRedirect(request.getContextPath() + page + "?msg=" + message);
     }
 }

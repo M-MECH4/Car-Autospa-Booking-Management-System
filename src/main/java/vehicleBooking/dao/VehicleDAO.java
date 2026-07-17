@@ -60,10 +60,13 @@ public class VehicleDAO {
         ResultSet rs = null;
 
         String sql =
-                "SELECT VEHICLEPLATENUM, VEHICLEBRAND, VEHICLEMODEL, VEHICLEYEAR, CUSTID " +
-                "FROM VEHICLE " +
-                "WHERE CUSTID = ? " +
-                "ORDER BY VEHICLEPLATENUM";
+                "SELECT v.VEHICLEPLATENUM, v.VEHICLEBRAND, v.VEHICLEMODEL, v.VEHICLEYEAR, v.CUSTID, " +
+                "CASE WHEN EXISTS (" +
+                "    SELECT 1 FROM BOOKING b WHERE b.VEHICLEPLATENUM = v.VEHICLEPLATENUM" +
+                ") THEN 0 ELSE 1 END AS DELETEALLOWED " +
+                "FROM VEHICLE v " +
+                "WHERE v.CUSTID = ? " +
+                "ORDER BY v.VEHICLEPLATENUM";
 
         try {
             con = ConnectionManager.getConnection();
@@ -83,6 +86,7 @@ public class VehicleDAO {
                 vehicle.setVehiclemodel(rs.getString("VEHICLEMODEL"));
                 vehicle.setVehicleyear(rs.getInt("VEHICLEYEAR"));
                 vehicle.setCustID(rs.getString("CUSTID"));
+                vehicle.setDeleteAllowed(rs.getInt("DELETEALLOWED") == 1);
 
                 vehicleList.add(vehicle);
             }
@@ -116,7 +120,10 @@ public class VehicleDAO {
 
         String sql =
                 "SELECT v.VEHICLEPLATENUM, v.VEHICLEBRAND, v.VEHICLEMODEL, v.VEHICLEYEAR, v.CUSTID, " +
-                "c.CUSTNAME, c.CUSTUSERNAME, c.CUSTEMAIL, c.CUSTPHONENUM " +
+                "c.CUSTNAME, c.CUSTUSERNAME, c.CUSTEMAIL, c.CUSTPHONENUM, " +
+                "CASE WHEN EXISTS (" +
+                "    SELECT 1 FROM BOOKING b WHERE b.VEHICLEPLATENUM = v.VEHICLEPLATENUM" +
+                ") THEN 0 ELSE 1 END AS DELETEALLOWED " +
                 "FROM VEHICLE v " +
                 "LEFT JOIN CUSTOMER c ON v.CUSTID = c.CUSTID " +
                 "ORDER BY v.VEHICLEPLATENUM";
@@ -140,6 +147,7 @@ public class VehicleDAO {
                 vehicle.setCustUsername(rs.getString("CUSTUSERNAME"));
                 vehicle.setCustEmail(rs.getString("CUSTEMAIL"));
                 vehicle.setCustPhoneNum(rs.getString("CUSTPHONENUM"));
+                vehicle.setDeleteAllowed(rs.getInt("DELETEALLOWED") == 1);
 
                 vehicles.add(vehicle);
             }
@@ -193,6 +201,21 @@ public class VehicleDAO {
 
             if (con != null) {
                 con.close();
+            }
+        }
+    }
+
+    public static boolean hasBookingConstraint(String vehicleplatenum) throws Exception {
+
+        String sql = "SELECT COUNT(*) FROM BOOKING WHERE VEHICLEPLATENUM = ?";
+
+        try (Connection con = ConnectionManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, vehicleplatenum);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
             }
         }
     }

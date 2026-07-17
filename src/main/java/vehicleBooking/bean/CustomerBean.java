@@ -1,102 +1,96 @@
 package vehicleBooking.bean;
 
-/*
- * Author: FES
- * March 2024
- */
 import java.io.Serializable;
 
-public class CustomerBean implements Serializable{
-	private static final long serialVersionUID = 1L;
-	private String custID;
-	private String custName;
-	private String custEmail;
-	private String custUsername;
-	private String custPassword;
-	private String custPhoneNum;
-	private String custRace;
-	private String custReligion;
-	private boolean loggedIn;
-	
-	public CustomerBean() {}
+public class CustomerBean implements Serializable {
 
-	public String getCustID() {
-		return custID;
-	}
+    private static final long serialVersionUID = 1L;
 
-	public void setCustID(String custID) {
-		this.custID = custID;
-	}
+    private String custID;
+    private String custName;
+    private String custEmail;
+    private String custUsername;
+    private String custPassword;
+    private String custPhoneNum;
 
-	public String getCustName() {
-		return custName;
-	}
+    // New attributes for festive package eligibility
+    private String custRace;
+    private String custReligion;
 
-	public void setCustName(String custName) {
-		this.custName = custName;
-	}
+    private boolean loggedIn;
 
-	public String getCustEmail() {
-		return custEmail;
-	}
+    public CustomerBean() {
+    }
 
-	public void setCustEmail(String custEmail) {
-		this.custEmail = custEmail;
-	}
+    public String getCustID() {
+        return custID;
+    }
 
-	public String getCustUsername() {
-		return custUsername;
-	}
+    public void setCustID(String custID) {
+        this.custID = custID;
+    }
 
-	public void setCustUsername(String custUsername) {
-		this.custUsername = custUsername;
-	}
+    public String getCustName() {
+        return custName;
+    }
 
-	public String getCustPassword() {
-		return custPassword;
-	}
+    public void setCustName(String custName) {
+        this.custName = custName;
+    }
 
-	public void setCustPassword(String custPassword) {
-		this.custPassword = custPassword;
-	}
+    public String getCustEmail() {
+        return custEmail;
+    }
 
-	public String getCustPhoneNum() {
-		return custPhoneNum;
-	}
+    public void setCustEmail(String custEmail) {
+        this.custEmail = custEmail;
+    }
 
-	public void setCustPhoneNum(String custPhoneNum) {
-		this.custPhoneNum = custPhoneNum;
-	}
+    public String getCustUsername() {
+        return custUsername;
+    }
 
-	public String getCustRace() {
-		return custRace;
-	}
+    public void setCustUsername(String custUsername) {
+        this.custUsername = custUsername;
+    }
 
-	public void setCustRace(String custRace) {
-		this.custRace = custRace;
-	}
+    public String getCustPassword() {
+        return custPassword;
+    }
 
-	public String getCustReligion() {
-		return custReligion;
-	}
+    public void setCustPassword(String custPassword) {
+        this.custPassword = custPassword;
+    }
 
-	public void setCustReligion(String custReligion) {
-		this.custReligion = custReligion;
-	}
-	public boolean isLoggedIn() {
-		return loggedIn;
-	}
+    public String getCustPhoneNum() {
+        return custPhoneNum;
+    }
 
-	public void setLoggedIn(boolean loggedIn) {
-		this.loggedIn = loggedIn;
-	}
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	} 
-	
-	
-	
-	
-	
+    public void setCustPhoneNum(String custPhoneNum) {
+        this.custPhoneNum = custPhoneNum;
+    }
 
+    public String getCustRace() {
+        return custRace;
+    }
+
+    public void setCustRace(String custRace) {
+        this.custRace = custRace;
+    }
+
+    public String getCustReligion() {
+        return custReligion;
+    }
+
+    public void setCustReligion(String custReligion) {
+        this.custReligion = custReligion;
+    }
+
+    public boolean isLoggedIn() {
+        return loggedIn;
+    }
+
+    public void setLoggedIn(boolean loggedIn) {
+        this.loggedIn = loggedIn;
+    }
 }

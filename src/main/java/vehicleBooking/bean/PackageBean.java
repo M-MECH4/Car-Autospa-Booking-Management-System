@@ -1,6 +1,10 @@
 package vehicleBooking.bean;
 
-public class PackageBean {
+import java.io.Serializable;
+
+public class PackageBean implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String packageID;
     private String packageName;
@@ -56,6 +60,7 @@ public class PackageBean {
         if (packageStatus == null || packageStatus.trim().isEmpty()) {
             return "AVAILABLE";
         }
+
         return packageStatus;
     }
 

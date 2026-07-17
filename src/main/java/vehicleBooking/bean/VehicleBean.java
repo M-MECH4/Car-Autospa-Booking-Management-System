@@ -12,6 +12,7 @@ public class VehicleBean {
     private String custUsername;
     private String custEmail;
     private String custPhoneNum;
+    private boolean deleteAllowed = true;
 
     public VehicleBean() {
     }
@@ -86,6 +87,16 @@ public class VehicleBean {
 
     public void setCustPhoneNum(String custPhoneNum) {
         this.custPhoneNum = custPhoneNum;
+    }
+
+
+
+    public boolean isDeleteAllowed() {
+        return deleteAllowed;
+    }
+
+    public void setDeleteAllowed(boolean deleteAllowed) {
+        this.deleteAllowed = deleteAllowed;
     }
 
     public String getVehiclePlateNum() {

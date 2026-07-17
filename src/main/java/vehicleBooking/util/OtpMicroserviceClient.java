@@ -1,17 +1,15 @@
 package vehicleBooking.util;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class OtpMicroserviceClient {
 
-    private static final String BASE_URL =
-            "http://localhost:8081/otp-service/api/otp";
+	private static final String BASE_URL =
+		    "https://xpert-otp-service-mustang-0448d57dbcd5.herokuapp.com/api/otp";
 
-    public static boolean createOtp(String userId, String role, String email) {
+    public static boolean createOtp(String userid, String userrole, String email) {
         try {
             URL url = new URL(BASE_URL + "/create");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -21,28 +19,30 @@ public class OtpMicroserviceClient {
             con.setDoOutput(true);
 
             String json = "{"
-                    + "\"userId\":\"" + escape(userId) + "\","
-                    + "\"userRole\":\"" + escape(role) + "\","
-                    + "\"email\":\"" + escape(email) + "\""
+                    + "\"userid\":\"" + userid + "\","
+                    + "\"userrole\":\"" + userrole + "\","
+                    + "\"email\":\"" + email + "\""
                     + "}";
 
-            try (OutputStream os = con.getOutputStream()) {
-                os.write(json.getBytes("UTF-8"));
-            }
+            OutputStream os = con.getOutputStream();
+            os.write(json.getBytes());
+            os.flush();
+            os.close();
 
-            String response = readResponse(con);
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream())
+            );
 
-            return con.getResponseCode() == 200
-                    && response.contains("\"success\":true");
+            String response = br.readLine();
+            return response != null && response.contains("\"success\":true");
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
 
-    public static boolean verifyOtp(String userId, String role, String otpCode) {
+    public static boolean verifyOtp(String userid, String userrole, String otpCode) {
         try {
             URL url = new URL(BASE_URL + "/verify");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -52,49 +52,26 @@ public class OtpMicroserviceClient {
             con.setDoOutput(true);
 
             String json = "{"
-                    + "\"userId\":\"" + escape(userId) + "\","
-                    + "\"userRole\":\"" + escape(role) + "\","
-                    + "\"otpCode\":\"" + escape(otpCode) + "\""
+                    + "\"userid\":\"" + userid + "\","
+                    + "\"userrole\":\"" + userrole + "\","
+                    + "\"otpCode\":\"" + otpCode + "\""
                     + "}";
 
-            try (OutputStream os = con.getOutputStream()) {
-                os.write(json.getBytes("UTF-8"));
-            }
+            OutputStream os = con.getOutputStream();
+            os.write(json.getBytes());
+            os.flush();
+            os.close();
 
-            String response = readResponse(con);
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream())
+            );
 
-            return con.getResponseCode() == 200
-                    && response.contains("\"success\":true");
+            String response = br.readLine();
+            return response != null && response.contains("\"success\":true");
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-
-        return false;
-    }
-
-    private static String readResponse(HttpURLConnection con) throws Exception {
-        BufferedReader br;
-
-        if (con.getResponseCode() >= 200 && con.getResponseCode() < 300) {
-            br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        } else {
-            br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-        }
-
-        StringBuilder sb = new StringBuilder();
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
-        }
-
-        br.close();
-        return sb.toString();
-    }
-
-    private static String escape(String value) {
-        if (value == null) return "";
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

@@ -10,6 +10,7 @@ public class StaffBean {
     private String staffPhoneNum;
     private String staffRole;
     private String ownerID;
+    private int relatedRecordCount;
 
     public StaffBean() {
     }
@@ -76,5 +77,18 @@ public class StaffBean {
 
     public void setOwnerID(String ownerID) {
         this.ownerID = ownerID;
+    }
+
+
+    public int getRelatedRecordCount() {
+        return relatedRecordCount;
+    }
+
+    public void setRelatedRecordCount(int relatedRecordCount) {
+        this.relatedRecordCount = relatedRecordCount;
+    }
+
+    public boolean isDeleteAllowed() {
+        return relatedRecordCount <= 0;
     }
 }

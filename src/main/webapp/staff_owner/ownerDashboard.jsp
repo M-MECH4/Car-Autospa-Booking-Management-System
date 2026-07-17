@@ -63,7 +63,9 @@
 
     <!-- sidebar css LETAK LAST supaya dia override sidebar lama -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css?v=<%= System.currentTimeMillis() %>">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -76,29 +78,18 @@
 
         <header class="topbar">
 
-            <h1>Owner Dashboard</h1>
+            <div>
+                <h1>Owner Dashboard</h1>
+            </div>
 
             <div class="topbar-right">
 
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Search bookings...">
-                </div>
-
-                <div class="notification">
-                    <i class="fa-solid fa-bell"></i>
-                    <span><%= todayBookings %></span>
-                </div>
-
-                <div class="user-circle">
-                    <%= initials %>
-                </div>
 
             </div>
 
         </header>
 
-        <section class="content-area">
+        <section>
 
             <div class="metrics-grid">
 
@@ -112,22 +103,6 @@
                         <h3>Today's Bookings</h3>
                         <h2><%= todayBookings %></h2>
 
-                        <%
-                            if (bookingDifference >= 0) {
-                        %>
-                            <p class="positive">
-                                <i class="fa-solid fa-arrow-trend-up"></i>
-                                +<%= bookingDifference %> from yesterday
-                            </p>
-                        <%
-                            } else {
-                        %>
-                            <p class="neutral">
-                                <%= bookingDifference %> from yesterday
-                            </p>
-                        <%
-                            }
-                        %>
                     </div>
 
                 </div>
@@ -188,7 +163,7 @@
                             <th>Vehicle</th>
                             <th>Package</th>
                             <th>Status</th>
-                            <th>Action</th>
+                   
                         </tr>
                     </thead>
 
@@ -255,8 +230,8 @@
                                 String statusClass = "pending";
 
                                 if ("BOOKED".equalsIgnoreCase(status)) {
-                                    statusText = "Pending";
-                                    statusClass = "pending";
+                                    statusText = "Booked";
+                                    statusClass = "booked";
                                 } else if ("IN PROGRESS".equalsIgnoreCase(status)) {
                                     statusText = "In Progress";
                                     statusClass = "progress";
@@ -288,12 +263,6 @@
                                 </span>
                             </td>
 
-                            <td>
-                                <span class="action-badge">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                    Active
-                                </span>
-                            </td>
 
                         </tr>
 

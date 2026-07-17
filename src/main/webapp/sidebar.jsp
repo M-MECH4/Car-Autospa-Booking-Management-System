@@ -59,25 +59,26 @@
     boolean sbIsOwner = "owner".equalsIgnoreCase(sbRole);
 
     boolean sbActiveDashboard = sbCurrentPath.contains("dashboard");
-    boolean sbActiveVehicle = sbCurrentPath.contains("vehicle") 
-            || sbCurrentPath.contains("custvehiclecontroller") 
+
+    boolean sbActiveVehicle = sbCurrentPath.contains("vehicle")
+            || sbCurrentPath.contains("custvehiclecontroller")
             || sbCurrentPath.contains("staffvehiclecontroller");
 
-    boolean sbActiveBooking = sbCurrentPath.contains("booking") 
+    boolean sbActiveBooking = sbCurrentPath.contains("booking")
             || sbCurrentPath.contains("bookingcontroller");
 
-    boolean sbActivePackage = sbCurrentPath.contains("package") 
+    boolean sbActivePackage = sbCurrentPath.contains("package")
             || sbCurrentPath.contains("packagecontroller");
 
     boolean sbActiveInvoice = sbCurrentPath.contains("invoice");
 
-    boolean sbActiveCustomer = sbCurrentPath.contains("managecustomercontroller") 
+    boolean sbActiveCustomer = sbCurrentPath.contains("managecustomercontroller")
             || sbCurrentPath.contains("managecustomer");
 
-    boolean sbActiveStaff = sbCurrentPath.contains("managestaffcontroller") 
+    boolean sbActiveStaff = sbCurrentPath.contains("managestaffcontroller")
             || sbCurrentPath.contains("managestaff");
 
-    boolean sbActiveReport = sbCurrentPath.contains("reportcontroller") 
+    boolean sbActiveReport = sbCurrentPath.contains("reportcontroller")
             || sbCurrentPath.contains("staffreport");
 
     String sbProfileLink = sbContextPath + "/login.jsp";
@@ -90,6 +91,44 @@
         sbProfileLink = sbContextPath + "/staff_owner/profile/staffProfile.jsp";
     }
 %>
+
+
+<style>
+    /* Post-login background for customer, staff and owner modules */
+    html,
+    body {
+        min-height: 100%;
+        background-image:
+            linear-gradient(rgba(6, 18, 24, 0.28), rgba(6, 18, 24, 0.28)),
+            url("<%= sbContextPath %>/images/postLoginBackground.jpg") !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+    }
+
+    .xp-layout,
+    .page-layout,
+    .dashboard-layout,
+    .wrapper {
+        background: transparent !important;
+    }
+
+    .xp-main-content,
+    .main-content,
+    .package-main,
+    .content-area {
+        background: rgba(244, 246, 248, 0.80) !important;
+        backdrop-filter: blur(2px);
+    }
+
+    @media (max-width: 900px) {
+        html,
+        body {
+            background-attachment: scroll !important;
+        }
+    }
+</style>
 
 <aside class="xp-sidebar">
 
@@ -143,17 +182,21 @@
         <% } else { %>
 
             <% if (sbIsOwner) { %>
+
                 <a href="<%= sbContextPath %>/staff_owner/ownerDashboard.jsp"
                    class="xp-nav-item <%= sbActiveDashboard ? "active" : "" %>">
                     <i class="fa-solid fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
+
             <% } else { %>
+
                 <a href="<%= sbContextPath %>/staff_owner/staffDashboard.jsp"
                    class="xp-nav-item <%= sbActiveDashboard ? "active" : "" %>">
                     <i class="fa-solid fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
+
             <% } %>
 
             <p class="xp-nav-title">MANAGEMENT</p>
@@ -189,18 +232,20 @@
             </a>
 
             <% if (sbIsOwner) { %>
+
                 <a href="<%= sbContextPath %>/ManageStaffController"
                    class="xp-nav-item <%= sbActiveStaff ? "active" : "" %>">
                     <i class="fa-solid fa-user-tie"></i>
                     <span>Manage Staff</span>
                 </a>
-            <% } %>
 
-            <a href="<%= sbContextPath %>/ReportController"
-               class="xp-nav-item <%= sbActiveReport ? "active" : "" %>">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Report</span>
-            </a>
+                <a href="<%= sbContextPath %>/ReportController"
+                   class="xp-nav-item <%= sbActiveReport ? "active" : "" %>">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Report</span>
+                </a>
+
+            <% } %>
 
         <% } %>
 

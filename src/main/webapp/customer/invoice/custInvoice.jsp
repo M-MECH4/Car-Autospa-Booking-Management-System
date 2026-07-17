@@ -80,8 +80,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css?v=<%= System.currentTimeMillis() %>">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/custInvoice.css?v=<%= System.currentTimeMillis() %>">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/xpertTheme.css?v=<%= System.currentTimeMillis() %>">
+ <link rel="stylesheet" href="${pageContext.request.contextPath}/css/footer.css?v=<%= System.currentTimeMillis() %>">
+
 
     <style>
         .print-area {
@@ -138,6 +140,7 @@
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -167,7 +170,6 @@
                         <th>Customer</th>
                         <th>Vehicle</th>
                         <th>Package</th>
-                        <th>Status</th>
                         <th>Amount</th>
                         <th>Action</th>
                     </tr>
@@ -178,7 +180,7 @@
                     if (invoiceList == null || invoiceList.size() == 0) {
                 %>
                     <tr>
-                        <td colspan="8" class="empty-row">
+                        <td colspan="7" class="empty-row">
                             No invoice found. Invoice will appear after staff generates it.
                         </td>
                     </tr>
@@ -214,20 +216,6 @@
                         <td><%= safe(inv.getVehiclePlateNum()) %></td>
 
                         <td><%= safe(inv.getPackageName()) %></td>
-
-                        <td>
-                            <% if (generated) { %>
-                                <span class="paid-badge">
-                                    <i class="fa-solid fa-check"></i>
-                                    GENERATED
-                                </span>
-                            <% } else { %>
-                                <span class="paid-badge" style="background:#e2e8f0; color:#64748b;">
-                                    <i class="fa-solid fa-clock"></i>
-                                    WAITING STAFF
-                                </span>
-                            <% } %>
-                        </td>
 
                         <td>
                             <span class="amount-cell"><%= amountText %></span>
@@ -318,11 +306,6 @@
                 <div class="field-label">Vehicle</div>
                 <div class="field-value" id="printVehicle">-</div>
             </div>
-
-            <div>
-                <div class="field-label">Payment Status</div>
-                <div class="field-value">PAID</div>
-            </div>
         </div>
     </div>
 
@@ -369,11 +352,6 @@
             </div>
         </div>
 
-        <div class="payment-box">
-            <i class="fa-solid fa-circle-check"></i>
-            PAYMENT RECEIVED
-        </div>
-
         <div class="invoice-note">
             Thank you for your business. This invoice is system-generated after staff confirmation.
         </div>
@@ -414,4 +392,64 @@
 </script>
 
 </body>
+
+<!-- ── FOOTER ───────────────────────────────────────────── -->
+  <footer id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">X<span>-</span>PERT DETAILING</div>
+          <p class="footer-tagline">Premium car detailing and maintenance services</p>
+        </div>
+        <div class="footer-col">
+          <h3>Services</h3>
+          <ul>
+            <li><button onclick="scrollTo('services')">Car Detailing</button></li>
+            <li><button onclick="scrollTo('services')">Ceramic Coating</button></li>
+            <li><button onclick="scrollTo('services')">Paint Protection</button></li>
+            <li><button onclick="scrollTo('services')">Interior Cleaning</button></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><button onclick="scrollTo('about')">About Us</button></li>
+            <li><button onclick="openModal()">Book Now</button></li>
+            <li><button onclick="scrollTo('footer')">Contact</button></li>
+            <li><button onclick="Swal.fire({title:'Coming Soon', text:'FAQ is coming soon!', icon:'info', confirmButtonColor:'#0F4C5C'})">FAQ</button></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Contact</h3>
+          <div class="footer-contact-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <a href="mailto:info@xpertdetailing.com">info@xpertdetailing.com</a>
+          </div>
+          <div class="footer-contact-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path
+                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17H6.6a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.7a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+            <a href="tel:+60123456789">+60 12-345 6789</a>
+          </div>
+          <div class="footer-contact-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span>JC111, Jalan BMU 2,<br>Bandar Baru Merlimau Utara,<br>77300 Merlimau, Melaka</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 X-PERT DETAILING. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 </html>
