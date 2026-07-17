@@ -1,0 +1,3 @@
+X-Pert Detailing is a web-based Car AutoSpa Booking Management System developed using Java Servlet, JSP, PostgreSQL, and deployed on Heroku. The system was created based on the operations and requirements of X-Pert Detailing, a car detailing shop located in Merlimau, Melaka.
+
+Based on the requirements provided by the stakeholder, the system was developed to simplify customer bookings and improve the management of daily business operations. It includes customer bookings, vehicle management, service packages, payments, staff management, reports, profile management, secure authentication, and role-based access for customers, staff, and the owner.
